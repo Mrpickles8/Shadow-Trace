@@ -1,23 +1,33 @@
 # Shadow-Trace
 
 ## Objective
-Conduct a forensic investigation on a Windows system to trace the activities of an attacker who moved laterally within a network. The goal was to identify the initial access vector, lateral movement techniques, and persistence mechanisms deployed.
+Perform static malware analysis on `windows-update.exe` and correlate
+findings with two EDR alerts involving Base64 and CharCode obfuscation.
 
 ### Skills Learned
-- Windows event log analysis (Security, System, Application)
-- Lateral movement detection (Pass-the-Hash, RDP abuse)
-- Persistence mechanism identification
-- MITRE ATT&CK framework mapping
-- Forensic artifact correlation
+- PE binary static analysis (architecture, SHA-256, strings, imports)
+- Hardcoded C2 URL and domain IOC extraction from binary strings
+- WS2_32.dll import identification (network capability)
+- Base64 decoding of obfuscated PowerShell command (EDR alert 1)
+- Decimal CharCode decoding of obfuscated browser download (EDR alert 2)
+- Filename extraction from JavaScript download command
+- Multi-source evidence correlation (static analysis + EDR alerts)
 
 ### Tools Used
-- Windows Event Viewer and PowerShell log analysis
-- Sysmon (Event IDs 1, 3, 7, 11, 13)
-- MITRE ATT&CK Navigator
-- Timeline Explorer
+- pestudio — PE static analysis
+- CyberChef — From Base64, From Decimal
+- sigcheck.exe, strings.exe (Sysinternals)
+- HxD (hex editor)
+- EDR agent (simulated)
 
 ## Steps
-Initial investigation focused on Windows Security Event logs, specifically Event IDs 4624 (logon) and 4648 (explicit credential use) to identify lateral movement. Sysmon logs were analyzed to detect suspicious process creation and network connections. Persistence mechanisms were identified through scheduled task and registry run key inspection. Each technique was mapped to its corresponding MITRE ATT&CK tactic and technique ID to produce a structured threat report.
+`windows-update.exe` loaded in pestudio → architecture: 64-bit, SHA-256 hash
+extracted. Strings section revealed C2 URL and domain `responses.tryhatme[.]com`.
+Base64 string decoded via CyberChef → hidden flag. WS2_32.dll import confirmed
+network capability. EDR Alert 1 (powershell.exe): Base64 payload decoded →
+`hxxps://tryhatme[.]com/dev/main[.]exe`. EDR Alert 2 (chrome.exe): decimal
+CharCode array decoded → `hxxps://reallysecureupdate.tryhatme[.]com/update[.]exe`,
+filename: `test.txt`.
 
-*Ref 1: Event ID 4624 log entries showing lateral movement via RDP*
-*Ref 2: MITRE ATT&CK mapping of identified techniques*
+*Ref 1: pestudio strings — C2 URL and Base64 flag decoded via CyberChef*
+*Ref 2: EDR Alert 2 — CyberChef From Decimal revealing hidden download URL*
